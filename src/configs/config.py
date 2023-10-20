@@ -1,5 +1,6 @@
 from pathlib import Path
 import addict
+import os
 
 from .protocol import PROTO
 
@@ -10,7 +11,7 @@ PROTO = PROTO.copy()
 
 # Initialise paths variables
 PATHS = addict.Dict({})
-PATHS.ROOT = Path('/home/vess/cdata/HumanTechnopole')
+PATHS.ROOT = Path(os.environ['HOME'])/'cdata'/'HumanTechnopole'
 PATHS.DATA = PATHS.ROOT/'datasets'
 
 PATHS.EMATB = PATHS.DATA/'E-MATB'
