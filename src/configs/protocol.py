@@ -10,8 +10,9 @@ PROTO.DESCRIPTION = 'WO OPEN Dataset, WO BANOBO'
 # Datasets in use:
 PROTO.DATASETS = addict.Dict({
     'E-MATB': True, # to use E-MATB ineuron dataset;
-    'MENDELEY': True, # to use Mendeley Data scRNAseq;
+    'MENDELEY': False, # to use Mendeley Data scRNAseq;
     'OPEN': False, # to use Open Data scRNAseq (17-18 th gestation week)
+    'BATCH_FROM_TIMEPOINT': False, # to infer E-MATB dataset batch info from timepoints or from the cell 
 })
 
 # Subset selection:
