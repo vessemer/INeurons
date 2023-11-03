@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import scanpy as sc
+from pathlib import Path
 
 from ..configs import config
 
@@ -198,6 +199,25 @@ def aggregate_wo_replace(
     return adata_cell_pop
 
 
+def gmt_to_decoupler(pth: Path) -> pd.DataFrame:
+    """
+    Parse a gmt file to a decoupler pathway dataframe.
+    """
+    from itertools import chain, repeat
+
+    pathways = {}
+
+    with Path(pth).open("r") as f:
+        for line in f:
+            name, _, *genes = line.strip().split("\t")
+            pathways[name] = genes
+
+    return pd.DataFrame.from_records(
+        chain.from_iterable(zip(repeat(k), v) for k, v in pathways.items()),
+        columns=["geneset", "genesymbol"],
+    )
+
+
 def prep_anndata(adata_):
     def fix_dtypes(adata_):
         df = pd.DataFrame(adata_.X.A, index=adata_.obs_names, columns=adata_.var_names)
@@ -228,11 +248,24 @@ def erase_log():
         file.write("")
 
 
-def log(message=None, image=None):
-    print(message)
+def log(*message):
+    print(*message)
     with open(config.PATHS.LOGS/"logs.md", 'a') as file:
         if image is not None:
             file.write(
                 "![](./appendix/{}.png)\n".format(image))
         file.write("{}  \n".format(message))
-        
+
+def log_image(*message):
+    print(*message)
+    with open(config.PATHS.LOGS/"logs.md", 'a') as file:
+        if image is not None:
+            file.write(
+                "![](./appendix/{}.png)\n".format(image))
+        file.write("{}  \n".format(message))
+
+
+def log(*message):
+    print(*message)
+    with open(config.PATHS.LOGS/"logs.md", 'a') as file:
+        file.write("{}  \n".format(' '.join(list(map(str,message)))))

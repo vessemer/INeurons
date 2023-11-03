@@ -77,3 +77,53 @@ def plot_bar(ax, x):
     ax.bar(x.index.astype(str), x.values)
     ax.set_xticks(
         ax.get_xticks(), ax.get_xticklabels(), rotation=45, ha='right')
+
+
+def volcano_plot(
+    adata, group_key, group_name="clusters", groupby="time",
+    title=None):
+    cell_type = "_".join(group_key.split("_")[1:])
+    result = sc.get.rank_genes_groups_df(adata, group=cell_type, key=group_key).copy()
+    result["-logQ"] = -np.log(result["pvals"].astype("float"))
+    lowqval_de = result.loc[abs(result["logfoldchanges"]) > config.PROTO.GLM.DEG_THRESHOLD.LFC]
+    other_de = result.loc[abs(result["logfoldchanges"]) <= config.PROTO.GLM.DEG_THRESHOLD.LFC]
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    sns.regplot(
+        x=other_de["logfoldchanges"],
+        y=other_de["-logQ"],
+        fit_reg=False,
+        scatter_kws={"s": 6},
+    )
+    sns.regplot(
+        x=lowqval_de["logfoldchanges"],
+        y=lowqval_de["-logQ"],
+        fit_reg=False,
+        scatter_kws={"s": 6},
+    )
+    ax.set_xlabel("log2 FC")
+    ax.set_ylabel("-log Q-value")
+
+    if title is None:
+        title = group_key.replace("_", " ")
+    plt.title(title)
+    plt.show()
+
+
+def plot_heatmap(
+    adata, group_key, group_name="cluster", groupby="isHuman"):
+    cell_type = "_".join(group_key.split("_")[1:])
+    res = sc.get.rank_genes_groups_df(adata, group=cell_type, key=group_key)
+    res.index = res["names"].values
+    res = res[
+        (res["pvals_adj"] < config.PROTO.GLM.DEG_THRESHOLD.FDR) & (abs(res["logfoldchanges"]) > config.PROTO.GLM.DEG_THRESHOLD.LFC)
+    ].sort_values(by=["logfoldchanges"])
+    print(f"Plotting {len(res)} genes...")
+    markers = list(res.index)
+    sc.pl.heatmap(
+        adata,#[adata.obs[group_name] == cell_type].copy(),
+        markers,
+        groupby=[groupby, 'line'],
+        swap_axes=True,
+    )
+    return markers
