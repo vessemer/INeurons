@@ -4,8 +4,8 @@ import addict
 PROTO = addict.Dict({})
 PROTO.SEED = 42
 
-PROTO.EXPERIMENT_ID = 'SUBSET_1'
-PROTO.DESCRIPTION = 'WO OPEN Dataset, WO BANOBO'
+PROTO.EXPERIMENT_ID = 'EMATB_MENDELEY_1'
+PROTO.DESCRIPTION = 'WO OPEN Dataset, WO BANOBO, W d2 & d5'
 
 INTEGRATES = [ 'harmony', 'scanorama' ]
 PROTO.INTEGRATE = addict.Dict({
@@ -22,25 +22,27 @@ PROTO.DATASETS = addict.Dict({
 
 # Subset selection:
 HVG_ALGOS = [ 'triku', 'hvgsc' ]
+EMATB_CLUSTERS = [ 'C{}'.format(i+1) for i in range(8) ]
 PROTO.SUBSET = addict.Dict({
+    'EMATB_CLUSTERS': EMATB_CLUSTERS[1:-1],
     'APE_HUMAN_OVERLAP': True, # to use only overlap of gene sets;
     'BANOBO': False, # whether to include banobo or drop it;
-    'TIMEPOINTS': [14, 28, 35, 119, 126], # timepoints to consider;
+    'TIMEPOINTS': [ 5, 14, 28, 35 ], # timepoints to consider;
     'MITO_GENES': False, # whether to include mito-genes;
     'RIBO_GENES': False, # whether to include ribo-genes;
     'USE_HIGHLY_VARIABLE': True, # to subset HV genes;
-    'NB_HIGHLY_VARIABLE': 5000, # None;
+    'NB_HIGHLY_VARIABLE': 7000, # None;
     'HVG_ALGOS': HVG_ALGOS[0], # Whether to use triku, or sc HVG;
-    'BATCH_KEY': '10X_date', # or None
+    'BATCH_KEY': None, # 'batch', # '10X_date', # or None
 })
 
 # Pseudo bulk generation
 PSEUDO_BULKS = [ 'within_group_replace', 'wo_replace', 'decoupler' ]
-PROTO.PSEUDO_BULK = addict.Dict({})
-PROTO.PSEUDO_BULK.TYPE = PSEUDO_BULKS[-1]
-PROTO.PSEUDO_BULK.SIZE = 75
-PROTO.PSEUDO_BULK.REPS = 2
-
+PROTO.PSEUDO_BULK = addict.Dict({
+    'TYPE': PSEUDO_BULKS[-1],
+    'SIZE': 75,
+    'REPS': 2,
+})
 
 # GLM contrast
 PSEUDOBULK_MODES = [ 'sum', 'median' ]
@@ -50,14 +52,19 @@ PROTO.GLM = addict.Dict({
     'MIN_CELLS': 30,
     'DEG_THRESHOLD': { 'FDR': .01, 'LFC': 1.5 },
     'FILTER': False,
+    'INCLUDE_TIME': True,
 })
 
+# GSEA & ORA
+REACTOMES = [ 'C2', 'MSigDB' ]
 COLLECTIONS = [ 
     'go_biological_process', 'hallmark', 'kegg_pathways',
     'chemical_and_genetic_perturbations',
 ]
 PROTO.ENRICHMENT = addict.Dict({
-    'COLLECTION': COLLECTIONS[2],
+    'GENE_SETS': ['KEGG_AXON_GUIDANCE', ''],
+    'REACTOME': REACTOMES[1],
+    'COLLECTION': COLLECTIONS[3],
 })
 
 # Quality Control

@@ -2,7 +2,7 @@ library(edgeR)
 library(limma)
 
 
-degs <- function(adata_, filter_low_counts) {
+degs <- function(adata_, filter_low_counts, include_time) {
     # create an edgeR object with counts and grouping factor
     y <- DGEList(assay(adata_, "X"), group=colData(adata_)$isHuman)
 
@@ -23,7 +23,11 @@ degs <- function(adata_, filter_low_counts) {
     # create a vector that is concatentation of condition and cell type that we will later use with contrasts
     group <- paste0(colData(adata_)$cluster)
     # replicate <- paste0(colData(adata_)$line, ".", colData(adata_)$replicate)
-    isHuman <- paste0(colData(adata_)$isHuman)#, ".", colData(adata_)$time)
+    isHuman <- paste0(colData(adata_)$isHuman)
+    if (include_time) {
+        isHuman <- paste0(colData(adata_)$isHuman, ".", colData(adata_)$time)
+    }
+    
     design <- model.matrix(~ 0 + isHuman + group)
     # estimate dispersion
     y <- estimateDisp(y, design=design)
