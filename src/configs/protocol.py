@@ -15,7 +15,7 @@ PROTO.INTEGRATE = addict.Dict({
 # Datasets in use:
 PROTO.DATASETS = addict.Dict({
     'E-MATB': True, # to use E-MATB ineuron dataset;
-    'MENDELEY': False, # to use Mendeley Data scRNAseq;
+    'MENDELEY': True, # to use Mendeley Data scRNAseq;
     'OPEN': False, # to use Open Data scRNAseq (17-18 th gestation week)
     'BATCH_FROM_TIMEPOINT': False, # to infer E-MATB dataset batch info from timepoints or from the cell 
 })
@@ -24,7 +24,7 @@ PROTO.DATASETS = addict.Dict({
 HVG_ALGOS = [ 'triku', 'hvgsc' ]
 EMATB_CLUSTERS = [ 'C{}'.format(i+1) for i in range(8) ]
 PROTO.SUBSET = addict.Dict({
-    'EMATB_CLUSTERS': EMATB_CLUSTERS[1:-1],
+    'EMATB_CLUSTERS': EMATB_CLUSTERS[3:-1],
     'APE_HUMAN_OVERLAP': True, # to use only overlap of gene sets;
     'BANOBO': False, # whether to include banobo or drop it;
     'TIMEPOINTS': [ 5, 14, 28, 35 ], # timepoints to consider;
@@ -47,7 +47,7 @@ PROTO.PSEUDO_BULK = addict.Dict({
 # GLM contrast
 PSEUDOBULK_MODES = [ 'sum', 'median' ]
 PROTO.GLM = addict.Dict({
-    'CONTRAST': '',
+    'CONTRAST': 'isHumanTrue.DayX-isHumanFalse.DayX',
     'PSEUDOBULK_MODE': PSEUDOBULK_MODES[0],
     'MIN_CELLS': 30,
     'DEG_THRESHOLD': { 'FDR': .01, 'LFC': 1.5 },
@@ -59,12 +59,17 @@ PROTO.GLM = addict.Dict({
 REACTOMES = [ 'C2', 'MSigDB' ]
 COLLECTIONS = [ 
     'go_biological_process', 'hallmark', 'kegg_pathways',
-    'chemical_and_genetic_perturbations',
+    'chemical_and_genetic_perturbations', 'biocarta_pathways',
 ]
 PROTO.ENRICHMENT = addict.Dict({
-    'GENE_SETS': ['KEGG_AXON_GUIDANCE', ''],
+    'GENE_SETS': [
+        'KEGG_AXON_GUIDANCE',
+        'WP_INTERACTOME_OF_POLYCOMB_REPRESSIVE_COMPLEX_2_PRC2',
+        'BENPORATH_PRC2_TARGETS',
+        'BIOCARTA_PRC2_PATHWAY',
+    ],
     'REACTOME': REACTOMES[1],
-    'COLLECTION': COLLECTIONS[3],
+    'COLLECTION': COLLECTIONS[0],
 })
 
 # Quality Control
@@ -78,3 +83,4 @@ PROTO.QC.MAX_COUNTS= 10000
 PROTO.QC.MT_PERCENTAGE = 5
 PROTO.QC.RB_PERCENTAGE = 35
 PROTO.QC.MIN_CELLS_PCT = .5
+

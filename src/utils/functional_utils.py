@@ -7,6 +7,7 @@ import numpy as np
 import scanpy as sc
 import decoupler as dc
 from pathlib import Path
+import gseapy as gp
 
 from ..configs import config
 from ..utils import utils as us
@@ -35,11 +36,10 @@ def load_GO():
         # Filter duplicates
         reactome = reactome[~reactome.duplicated(("geneset", "genesymbol"))]
 
-        # Filtering genesets to match behaviour of fgsea
-        geneset_size = reactome.groupby("geneset").size()
-
-    gsea_genesets = geneset_size.index[
-        (geneset_size > 5) & (geneset_size < 500)]
+    # Filtering genesets to match behaviour of fgsea
+    geneset_size = reactome.groupby("geneset").size()
+    gsea_genesets = geneset_size.index[ (geneset_size > 5) ]
+    #& (geneset_size < 500)]
     reactome = reactome[reactome["geneset"].isin(gsea_genesets)]
 
     return reactome
@@ -83,28 +83,32 @@ def run_GSEA(selected, reactome):
     return gsea_results
 
 
-def run_ULM(selected, collectri):
+def run_ULM(selected, collectri, volcano=None):
     print('Launched ULM for TF slope t-stat')
     mat = selected[['logfoldchanges']].T.rename(
         index={'logfoldchanges': 'isHuman'})
     tf_acts, tf_pvals = dc.run_ulm(mat=mat, net=collectri)
     ' '.join(tf_pvals.T[tf_pvals.T.isHuman < .01].index)
 
-    dc.plot_barplot(tf_acts, 'isHuman', top=25, vertical=True)
+    dc.plot_barplot(
+        tf_acts, 'isHuman', top=25, vertical=True,
+        save=config.PATHS.LOGS/'appendix'/'ulm{}.png'.format(selected.pid.values[0]))
 
     # Extract logFCs and pvals
     logFCs = selected[['logfoldchanges']].T.rename(index={'logfoldchanges': 'isHuman'})
     pvals = selected[['pvals_adj']].T.rename(index={'pvals_adj': 'isHuman'})
 
     # Plot
-    dc.plot_volcano(
-        logFCs, pvals, 'isHuman', name='CTNNB1', net=collectri,
-        top=10, sign_thr=0.05, lFCs_thr=0.5)
+    if volcano is not None:
+        dc.plot_volcano(
+            logFCs, pvals, 'isHuman',
+            name=volcano, net=collectri,
+            top=10, sign_thr=0.05, lFCs_thr=0.5)
 
     return tf_acts, tf_pvals
 
 
-def run_ORA(selected, reactome, threshold=.005):
+def run_ORA(selected, reactome, threshold=.05):
     print('Launched ORA')
     # Run ora
     enr_pvals = dc.get_ora_df(
@@ -117,7 +121,9 @@ def run_ORA(selected, reactome, threshold=.005):
 
     dc.plot_dotplot(
         enr_pvals.head(30), x='Combined score', y='Term', 
-        s='Odds ratio', c='FDR p-value', scale=0.5, figsize=(7,10))
+        s='Odds ratio', c='FDR p-value', scale=0.5, 
+        figsize=(7,10),
+        save=config.PATHS.LOGS/'appendix'/'ora{}.png'.format(selected.pid.values[0]))
 
     for set_ in config.PROTO.ENRICHMENT.GENE_SETS:
         if set_ not in reactome.collection: continue
@@ -130,3 +136,43 @@ def run_ORA(selected, reactome, threshold=.005):
             set_name='KEGG_NEUROTROPHIN_SIGNALING_PATHWAY'
         )
     return enr_pvals
+
+
+def up_down_ORA(selected, sets):
+    # subset up or down regulated genes
+    threshold = config.PROTO.GLM.DEG_THRESHOLD.FDR
+    lfc = 0.#config.PROTO.GLM.DEG_THRESHOLD.LFC
+    degs_sig = selected[selected.pvals_adj < threshold]
+    degs_up = degs_sig[degs_sig.logfoldchanges > lfc]
+    degs_dw = degs_sig[degs_sig.logfoldchanges < -lfc]
+
+    enr_up = gp.enrichr(list(degs_up.index), gene_sets=sets)
+    gp.dotplot(
+        enr_up.res2d, figsize=(3,5), 
+        title="Up", cmap = plt.cm.autumn_r, cutoff=.1)
+    plt.show()
+
+    enr_dw = gp.enrichr(list(degs_dw.index), gene_sets=sets)
+    gp.dotplot(
+        enr_dw.res2d, figsize=(3,5), title="Down", 
+        cmap = plt.cm.winter_r, size=5)
+    plt.show()
+
+    # concat results
+    enr_up.res2d['UP_DW'] = "UP"
+    enr_dw.res2d['UP_DW'] = "DOWN"
+    enr_res = pd.concat([
+        enr_up.res2d.sort_values('Adjusted P-value').head(20),
+        enr_dw.res2d.sort_values('Adjusted P-value').head(20)])
+
+    # display multi-datasets
+    ax = gp.dotplot(enr_res,figsize=(5,7),
+                    x='UP_DW',
+                    x_order = ["UP","DOWN"],
+                    title="GO_BP",
+                    # cmap = NbDr.reversed(),
+                    size=7,
+                    show_ring=True, cutoff=.1)
+    ax.set_xlabel("")
+    plt.show()
+    plt.savefig(config.PATHS.LOGS/'appendix'/'up_down_ora{}.png'.format(selected.pid.values[0]))

@@ -3,6 +3,8 @@ import numpy as np
 import scanpy as sc
 from pathlib import Path
 
+import re
+
 from ..configs import config
 
 
@@ -248,24 +250,19 @@ def erase_log():
         file.write("")
 
 
-def log(*message):
-    print(*message)
-    with open(config.PATHS.LOGS/"logs.md", 'a') as file:
-        if image is not None:
-            file.write(
-                "![](./appendix/{}.png)\n".format(image))
-        file.write("{}  \n".format(message))
-
 def log_image(*message):
     print(*message)
     with open(config.PATHS.LOGS/"logs.md", 'a') as file:
-        if image is not None:
+        for ms in message:
             file.write(
-                "![](./appendix/{}.png)\n".format(image))
-        file.write("{}  \n".format(message))
+                "![](./appendix/{})\n".format(ms))
 
 
 def log(*message):
     print(*message)
     with open(config.PATHS.LOGS/"logs.md", 'a') as file:
-        file.write("{}  \n".format(' '.join(list(map(str,message)))))
+        message = '  \n'.join(list(map(str,message)))
+        message = re.sub(
+            r'\s', 
+            '&nbsp;', message)
+        file.write(message.replace('\n', '  \n') + "  \n")

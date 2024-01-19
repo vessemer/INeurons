@@ -121,7 +121,7 @@ def plot_heatmap(
     print(f"Plotting {len(res)} genes...")
     markers = list(res.index)
     sc.pl.heatmap(
-        adata,#[adata.obs[group_name] == cell_type].copy(),
+        adata, #[adata.obs[group_name] == cell_type].copy(),
         markers,
         groupby=[groupby, 'line'],
         swap_axes=True,
